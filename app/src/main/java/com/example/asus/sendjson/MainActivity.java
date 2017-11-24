@@ -18,18 +18,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,61 +45,35 @@ public class MainActivity extends AppCompatActivity {
     private static final int RESULT_IMAGE = 1;
     Uri uri;
     Bitmap bitmap;
+    ListView listView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        edname = (EditText) findViewById(R.id.editText);
-        edadd = (EditText) findViewById(R.id.editText2);
-        edmobile = (EditText) findViewById(R.id.editText3);
-        btnsave = (Button) findViewById(R.id.button);
-        btnbrowse = (Button) findViewById(R.id.button2);
-        imgView = (ImageView) findViewById(R.id.imageView);
-        builder = new AlertDialog.Builder(MainActivity.this);
+        setContentView(R.layout.activity_show_screen);
+        listView = (ListView) findViewById(R.id.listView);
+        OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsageOkHttpClient();
+        Retrofit.Builder builder = new Retrofit.Builder().baseUrl("https://10.20.110.10/")
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create());
 
-        btnbrowse.setOnClickListener(new View.OnClickListener() {
+        Retrofit retrofit = builder.build();
+        GitHubClient client = retrofit.create(GitHubClient.class);
+        Call<List<User>> call = client.reposForUser("insert");
+
+        call.enqueue(new Callback<List<User>>() {
             @Override
-            public void onClick(View view) {
-                ActivityCompat.requestPermissions(MainActivity.this,
-                        new String [] {Manifest.permission.READ_EXTERNAL_STORAGE},
-                        RESULT_IMAGE);
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                List<User> repos = response.body();
+                listView.setAdapter(new GitHubRepoAdapter(MainActivity.this, repos));
+                Toast.makeText(getApplicationContext(), "Success...", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<List<User>> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Something went wrong..." + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
-
-        btnsave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                uploadFile();
-            }
-        });
-
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if(requestCode == RESULT_IMAGE){
-            if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                Intent intent = new Intent(Intent.ACTION_PICK);
-                intent.setType("image/");
-                startActivityForResult(intent, RESULT_IMAGE);
-            }
-        }
-    }
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RESULT_IMAGE && resultCode == RESULT_OK && data!=null){
-            Uri uri = data.getData();
-            try{
-                InputStream inputStream = getContentResolver().openInputStream(uri);
-                bitmap = BitmapFactory.decodeStream(inputStream);
-                imgView.setImageBitmap(bitmap);
-
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-        }
     }
     private String imageToString (Bitmap bitmap){
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -104,43 +82,6 @@ public class MainActivity extends AppCompatActivity {
         return Base64.encodeToString(imgBytes,Base64.DEFAULT);
     }
     public void uploadFile(){
-        final String uname, uemail, umobile;
-        uname = edname.getText().toString();
-        uemail = edadd.getText().toString();
-        umobile = edmobile.getText().toString();
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, server_url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        builder.setTitle("Server Response");
-                        builder.setMessage("Response: " + response);
-                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                edname.setText(" ");
-                                edadd.setText(" ");
-                                edmobile.setText(" ");
-                            }
-                        });
-                        AlertDialog alertDialog = builder.create();
-                        alertDialog.show();
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
 
-            }
-        }){
-            @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("name", uname);
-                params.put("email", uemail);
-                params.put("mobile", umobile);
-                params.put("image", imageToString(bitmap));
-                return params;
-            }
-        };
-        mySingleton.getmInstance(MainActivity.this).addToRequestque(stringRequest);
     }
 }
