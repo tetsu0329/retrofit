@@ -45,7 +45,8 @@ public class GitHubRepoAdapter extends ArrayAdapter<User> {
         textView.setText(item.getName());
         textView1.setText(item.getEmail());
         textView2.setText(item.getMobile());
-        Picasso.with(context).load(item.getImage()).into(imageView);
+        String url = "http://10.20.110.10/Volley/" + item.getImage();
+        Picasso.with(context).load(url).into(imageView);
 
 
 
