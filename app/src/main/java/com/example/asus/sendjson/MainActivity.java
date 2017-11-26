@@ -51,6 +51,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_screen);
         listView = (ListView) findViewById(R.id.listView);
+        btnbrowse = (Button) findViewById(R.id.button3);
+        btnbrowse.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ShowScreen.class);
+                startActivity(intent);
+            }
+        });
         OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsageOkHttpClient();
         Retrofit.Builder builder = new Retrofit.Builder().baseUrl("https://10.20.110.10/")
                 .client(okHttpClient)
