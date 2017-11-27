@@ -10,6 +10,12 @@ public class User {
     public String mobile;
     public String image;
 
+    public User(String name, String email, String mobile) {
+        this.name = name;
+        this.email = email;
+        this.mobile = mobile;
+    }
+
     public String getImage() {
         return image;
     }
