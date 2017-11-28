@@ -63,27 +63,33 @@ public class ShowScreen extends AppCompatActivity {
         editText.setFocusable(true);
 
         btnsave = (Button) findViewById(R.id.button);
-        btnsave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendNetworkRequest(editText.getText().toString(),
-                        editText1.getText().toString(),
-                        editText2.getText().toString(),
-                        imageToString(bitmap));
-            }
-        });
+        btnsave.setOnClickListener(mOnClick);
         
         btnbrowse = (Button) findViewById(R.id.button2);
-        btnbrowse.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ActivityCompat.requestPermissions(ShowScreen.this,
-                        new String [] {Manifest.permission.READ_EXTERNAL_STORAGE},
-                        RESULT_IMAGE);
-            }
-        });
+        btnbrowse.setOnClickListener(mOnClick);
 
     }
+
+    private View.OnClickListener mOnClick = new View.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            switch(view.getId()){
+                case R.id.button:
+                    sendNetworkRequest(editText.getText().toString(),
+                            editText1.getText().toString(),
+                            editText2.getText().toString(),
+                            imageToString(bitmap));
+                    break;
+                case R.id.button2:
+                    ActivityCompat.requestPermissions(ShowScreen.this,
+                            new String [] {Manifest.permission.READ_EXTERNAL_STORAGE},
+                            RESULT_IMAGE);
+                    break;
+
+            }
+        }
+    };
     private String imageToString (Bitmap bitmap){
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
