@@ -24,9 +24,14 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.json.JSONObject;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import okhttp3.OkHttpClient;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -43,7 +48,7 @@ public class ShowScreen extends AppCompatActivity {
     Bitmap bitmap;
     ListView listView;
     EditText editText, editText1, editText2;
-    Button btnsave;
+    Button btnsave, btnbrowse;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,37 +62,59 @@ public class ShowScreen extends AppCompatActivity {
         btnsave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                User user = new User(
-                        editText.getText().toString(),
+                sendNetworkRequest(editText.getText().toString(),
                         editText1.getText().toString(),
-                        editText2.getText().toString()
-                );
-                sendNetworkRequest(user);
+                        editText2.getText().toString());
+            }
+        });
+        
+        btnbrowse = (Button) findViewById(R.id.button2);
+        btnbrowse.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
             }
         });
 
     }
-    public void sendNetworkRequest (User user){
+    public void sendNetworkRequest (String name, String email, String mobile){
         OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsageOkHttpClient();
         Gson gson = new GsonBuilder().setLenient().create();
         Retrofit.Builder builder = new Retrofit.Builder()
-                .baseUrl("http://10.20.110.10/Volley/")
+                .baseUrl("https://10.20.110.10/")
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create(gson));
-
         Retrofit retrofit = builder.build();
         GitHubUser gitHubUser = retrofit.create(GitHubUser.class);
-        Call<User> call = gitHubUser.createAccount(user);
-        call.enqueue(new Callback<User>() {
+
+        /**Call<List<Pojo>> call = gitHubUser.createAccount(name,email,mobile);
+        call.enqueue(new Callback<List<Pojo>>() {
             @Override
-            public void onResponse(Call<User> call, Response<User> response) {
-                Toast.makeText(getApplicationContext(),"Success" + response.body().getName(), Toast.LENGTH_LONG).show();
+            public void onResponse(Call<List<Pojo>> call, Response<List<Pojo>> response) {
+                Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_LONG).show();
             }
 
             @Override
-            public void onFailure(Call<User> call, Throwable t) {
+            public void onFailure(Call<List<Pojo>> call, Throwable t) {
                 Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
             }
+        });**/
+        Map<String , String> map = new HashMap<>();
+        map.put("name", name);
+        map.put("email", email);
+        map.put("mobile", mobile);
+        Call <ResponseBody> call = gitHubUser.createAccount(map);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_LONG).show();
+            }
         });
+
     }
 }
