@@ -26,6 +26,8 @@ import com.google.gson.GsonBuilder;
 
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,9 +56,11 @@ public class ShowScreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        imgView = (ImageView) findViewById(R.id.imageView);
         editText = (EditText) findViewById(R.id.editText);
         editText1 = (EditText) findViewById(R.id.editText2);
         editText2 = (EditText) findViewById(R.id.editText3);
+        editText.setFocusable(true);
 
         btnsave = (Button) findViewById(R.id.button);
         btnsave.setOnClickListener(new View.OnClickListener() {
@@ -64,7 +68,8 @@ public class ShowScreen extends AppCompatActivity {
             public void onClick(View view) {
                 sendNetworkRequest(editText.getText().toString(),
                         editText1.getText().toString(),
-                        editText2.getText().toString());
+                        editText2.getText().toString(),
+                        imageToString(bitmap));
             }
         });
         
@@ -72,12 +77,46 @@ public class ShowScreen extends AppCompatActivity {
         btnbrowse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                ActivityCompat.requestPermissions(ShowScreen.this,
+                        new String [] {Manifest.permission.READ_EXTERNAL_STORAGE},
+                        RESULT_IMAGE);
             }
         });
 
     }
-    public void sendNetworkRequest (String name, String email, String mobile){
+    private String imageToString (Bitmap bitmap){
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte [] imgBytes = byteArrayOutputStream.toByteArray();
+        return Base64.encodeToString(imgBytes,Base64.DEFAULT);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if(requestCode == RESULT_IMAGE){
+            if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/");
+                startActivityForResult(intent, RESULT_IMAGE);
+            }
+        }
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RESULT_IMAGE && resultCode == RESULT_OK && data!=null){
+            Uri uri = data.getData();
+            try{
+                InputStream inputStream = getContentResolver().openInputStream(uri);
+                bitmap = BitmapFactory.decodeStream(inputStream);
+                imgView.setImageBitmap(bitmap);
+
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+    public void sendNetworkRequest (String name, String email, String mobile, String image){
         OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsageOkHttpClient();
         Gson gson = new GsonBuilder().setLenient().create();
         Retrofit.Builder builder = new Retrofit.Builder()
@@ -103,6 +142,7 @@ public class ShowScreen extends AppCompatActivity {
         map.put("name", name);
         map.put("email", email);
         map.put("mobile", mobile);
+        map.put("image", image);
         Call <ResponseBody> call = gitHubUser.createAccount(map);
         call.enqueue(new Callback<ResponseBody>() {
             @Override
